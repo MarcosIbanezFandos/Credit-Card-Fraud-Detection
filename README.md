@@ -5,6 +5,15 @@ Includes data preprocessing, model training and comparison, cost-sensitive evalu
 
 ---
 
+## Status / Access
+
+ℹ️ **There is no public hosted demo.** The Streamlit app is meant to be run
+**locally** (`streamlit run app_streamlit.py`, see [Streamlit App](#streamlit-app)).
+The dataset (`creditcard.csv`) is **not** bundled — download it from Kaggle
+first (see [Dataset](#dataset)). Pre-trained models are shipped via Git LFS.
+
+---
+
 ## Project Overview
 
 This repository contains the code of my final degree project (TFG) focused on **fraud detection in credit card transactions**.
@@ -35,7 +44,7 @@ Key aspects:
 Approximate structure of the repository:
 
 ```text
-CreditCard-FraudDetection/
+Credit-Card-Fraud-Detection/
 ├─ app_streamlit.py          # Streamlit web app
 ├─ core.py                   # Core utilities (data loading, preprocessing, helpers)
 ├─ train_rf_baseline.py      # Training script for baseline Random Forest
@@ -91,7 +100,7 @@ Steps to download:
 4.	Place it under the project directory, for example:
 	
 ```
-CreditCard-FraudDetection/
+Credit-Card-Fraud-Detection/
 └─ data/
    └─ creditcard.csv
 ```
@@ -104,8 +113,8 @@ Make sure that the path used in the scripts (e.g. in core.py) matches the locati
 1.	Clone the repository:
 
 ```
-git clone https://github.com/MarcosIbanezFandos/CreditCard-FraudDetection.git
-cd CreditCard-FraudDetection
+git clone https://github.com/MarcosIbanezFandos/Credit-Card-Fraud-Detection.git
+cd Credit-Card-Fraud-Detection
 ```
 
 2.	Create and activate a virtual environment (optional but recommended):
