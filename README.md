@@ -1,215 +1,106 @@
-# Credit Card Fraud Detection (ML Project)
+# Credit Card Fraud Detection
 
-End-to-end machine learning project for credit card fraud detection using the [Kaggle credit card fraud dataset](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud).  
-Includes data preprocessing, model training and comparison, cost-sensitive evaluation, and an interactive Streamlit app.
+Cost-sensitive fraud detection for card transactions. This is the code of my
+Bachelor's thesis in Telecommunications Engineering at the Universitat
+Politècnica de València (UPV): *Fraud Detection in FinTech Transactions using
+Artificial Intelligence* ([thesis, PDF, in Spanish](https://marcosibanezfandos.github.io/Memoria_Entrega_Final_MarcosIbanez.pdf)).
 
----
+Only 0.17 % of the transactions in the dataset are fraudulent, so accuracy says
+almost nothing. The models here are judged by what their mistakes **cost**: a
+missed fraud costs its amount, a false alarm costs the review and the friction
+it causes. Probability calibration and threshold optimisation turn that cost
+function into a decision rule, and a Streamlit app lets you explore the
+trade-off interactively.
 
-## Status / Access
+![Python](https://img.shields.io/badge/Python-3-3776ab?style=flat-square&logo=python&logoColor=white)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-ML-f7931e?style=flat-square&logo=scikitlearn&logoColor=white)
+![XGBoost](https://img.shields.io/badge/XGBoost-gradient%20boosting-189fdd?style=flat-square)
+![LightGBM](https://img.shields.io/badge/LightGBM-gradient%20boosting-9acd32?style=flat-square)
+![Streamlit](https://img.shields.io/badge/Streamlit-app-ff4b4b?style=flat-square&logo=streamlit&logoColor=white)
 
-ℹ️ **There is no public hosted demo.** The Streamlit app is meant to be run
-**locally** (`streamlit run app_streamlit.py`, see [Streamlit App](#streamlit-app)).
-The dataset (`creditcard.csv`) is **not** bundled — download it from Kaggle
-first (see [Dataset](#dataset)). Pre-trained models are shipped via Git LFS.
+## Results
 
----
+Stratified hold-out test set: 85,443 transactions, 148 of them fraudulent.
 
-## Project Overview
+**Decision threshold tuned for F1**
 
-This repository contains the code of my final degree project (TFG) focused on **fraud detection in credit card transactions**.
+| Model | Precision | Recall | F1 | ROC AUC | PR AUC |
+|---|---:|---:|---:|---:|---:|
+| Random Forest (baseline) | 0.930 | 0.804 | **0.862** | 0.931 | 0.823 |
+| Random Forest (tuned) | 0.891 | 0.770 | 0.826 | 0.974 | 0.821 |
+| XGBoost | 0.918 | 0.757 | 0.830 | **0.977** | **0.826** |
+| LightGBM | 0.956 | 0.736 | 0.832 | 0.936 | 0.794 |
+| Logistic regression | 0.869 | 0.764 | 0.813 | 0.967 | 0.697 |
 
-Key aspects:
+**Decision threshold tuned for expected cost**
 
-- Highly **imbalanced dataset** (legitimate vs fraudulent transactions).
-- **Supervised machine learning** for fraud detection.
-- Comparison between different models and configurations.
-- **Cost-sensitive evaluation**: focus on the financial impact of false positives / false negatives.
-- Simple **web interface with Streamlit** to interact with the trained model.
+When the threshold minimises the cost model of the thesis instead of F1, the
+ranking changes: the tuned Random Forest has the lowest total cost, catching
+136 of the 148 frauds. Recall goes up at the price of more transactions sent to
+review, which is exactly the trade-off a fraud team makes.
 
----
+| Model | Recall | Frauds missed | Relative cost |
+|---|---:|---:|---:|
+| Random Forest (tuned) | 0.919 | 12 | **1.00** |
+| LightGBM | 0.878 | 18 | 1.18 |
+| XGBoost | 0.939 | 9 | 1.20 |
+| Logistic regression | 0.899 | 15 | 1.46 |
+| Random Forest (baseline) | 0.865 | 20 | 2.01 |
 
-## Main Features
+The full tables are in [`comparar/`](comparar) and [`comparar_coste/`](comparar_coste),
+and the plots (confusion matrices, ROC and PR curves, gain charts, learning
+curves, feature importances) in [`imagenes/`](imagenes).
 
-- Data loading and preprocessing.
-- Baseline Random Forest model.
-- Optimized Random Forest model (hyperparameter tuning).
-- Model comparison using standard metrics (accuracy, precision, recall, F1, ROC AUC, etc.).
-- Cost-based evaluation of models.
-- Streamlit app for demo and manual testing of fraud detection.
+## How it works
 
----
+- **Data**: the public [Credit Card Fraud Detection](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud)
+  dataset (284,807 transactions by European cardholders, PCA-anonymised features).
+- **Models**: logistic regression, Random Forest (baseline and tuned), XGBoost
+  and LightGBM, trained on a stratified 70/30 split.
+- **Class imbalance**: class weighting instead of oversampling, so the test set
+  keeps the real fraud rate.
+- **Calibration**: predicted scores are calibrated so they can be read as
+  probabilities and compared against costs.
+- **Threshold optimisation**: the operating point is chosen twice, once for F1
+  and once for minimum expected cost, to show how the business goal changes the
+  "best" model.
 
-## Project Structure
-
-Approximate structure of the repository:
+## Repository layout
 
 ```text
-Credit-Card-Fraud-Detection/
-├─ app_streamlit.py          # Streamlit web app
-├─ core.py                   # Core utilities (data loading, preprocessing, helpers)
-├─ train_rf_baseline.py      # Training script for baseline Random Forest
-├─ train_rf_optimized.py     # Training script for optimized Random Forest
-├─ compare_models.py         # Model comparison using multiple metrics
-├─ compare_models_cost.py    # Cost-sensitive model evaluation
-├─ verificar_duracion.py     # Small utility script (e.g. timing / checks)
-├─ models/                   # Trained models (.pkl) tracked with Git LFS
-├─ data/                     # Local data folder (not versioned: creditcard.csv)
-├─ README.md                 # Project documentation
-├─ .gitignore
-└─ .gitattributes
-
+app_streamlit.py         Streamlit app to explore models, thresholds and costs
+core.py                  Data loading and shared helpers
+train_*.py               One training script per model
+compare_models.py        Metric comparison at the F1-optimal threshold
+compare_models_cost.py   Cost-sensitive comparison
+modelos/                 Trained models (.pkl, stored with Git LFS)
+comparar/, comparar_coste/, imagenes/   Results and plots
+docs/seguridad.md        Security rules for changes to this repository
 ```
 
-Note:
-The original dataset file creditcard.csv is not included in the repository.
-Trained models (.pkl) are tracked using Git LFS.
+## Getting started
 
-⸻
-
-### Tech Stack
-
-•	Language: Python
-
-•	Data & ML: pandas, NumPy, scikit-learn
-
-•	Visualisation (optional): matplotlib / seaborn
-
-•	Web app: Streamlit
-
-•	Version control: Git + GitHub (Git LFS for model files)
-
-
-⸻
-
-### Dataset
-
-The project uses the public dataset:
-
-Credit Card Fraud Detection – Kaggle
-
-https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud
-
-Steps to download:
-
-1.	Go to the dataset page on Kaggle.
-	
-2.	Log in with your Kaggle account.
-	
-3.	Download the file creditcard.csv.
-
-4.	Place it under the project directory, for example:
-	
-```
-Credit-Card-Fraud-Detection/
-└─ data/
-   └─ creditcard.csv
-```
-Make sure that the path used in the scripts (e.g. in core.py) matches the location of creditcard.csv.
-
-⸻
-
-### Setup
-
-1.	Clone the repository:
-
-```
+```bash
 git clone https://github.com/MarcosIbanezFandos/Credit-Card-Fraud-Detection.git
 cd Credit-Card-Fraud-Detection
-```
+git lfs install && git lfs pull        # pre-trained models
 
-2.	Create and activate a virtual environment (optional but recommended):
-```
-python -m venv .venv
-source .venv/bin/activate  # Mac / Linux
-# .venv\Scripts\activate   # Windows (if applicable)
-```
-3.	Install dependencies:
-
-If there is a requirements.txt file:
-```
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
-Otherwise, install the main libraries manually (example):
+
+Download `creditcard.csv` from Kaggle (it is not redistributed here) and place
+it in `data/creditcard.csv`.
+
+```bash
+streamlit run app_streamlit.py         # interactive app on http://localhost:8501
+python compare_models.py               # F1 comparison
+python compare_models_cost.py          # cost comparison
+python train_rf_optimized.py           # retrain a model (one script per model)
 ```
-pip install pandas numpy scikit-learn streamlit matplotlib seaborn
-```
-  4.	Download the dataset from Kaggle as explained above and place creditcard.csv in data/.
 
-⸻
+There is no hosted demo: the app runs locally.
 
-### Training the Models
+## Author
 
-Pre-trained models (`.pkl` files) are already included in the repository via Git LFS.
-
-If you want to retrain the models from scratch (for example, after modifying the code or trying new parameters), you can use the following scripts:
-
-
-Baseline Random Forest
-```
-python train_rf_baseline.py
-```
-Optimized Random Forest
-```
-python train_rf_optimized.py
-```
-The scripts will:
-
-•	Load creditcard.csv from the configured path (e.g. data/creditcard.csv).
-
-•	Train the corresponding model.
-
-•	Save the trained model as a .pkl file under the models/ folder.
-
-⸻
-
-### Model Evaluation & Cost Analysis
-
-To compare the performance of different models:
-```
-python compare_models.py
-```
-To run the cost-sensitive evaluation:
-```
-python compare_models_cost.py
-```
-These scripts generate metrics and (optionally) plots to analyse which model is more suitable for fraud detection under different constraints.
-
-⸻
-
-### Streamlit App
-
-The Streamlit app allows you to interactively test the fraud detection model (for example, by loading transactions or manually setting feature values).
-
-Run:
-```
-streamlit run app_streamlit.py
-```
-Then open the local URL shown in the terminal (usually http://localhost:8501) in your browser.
-
-⸻
-
-### Notes on Git LFS
-
-Trained models (.pkl files) can be quite large.
-
-For that reason, they are tracked with Git LFS.
-
-If you clone this repository and want to pull the model files, make sure you have Git LFS installed:
-```
-git lfs install
-git lfs pull
-```
-If you prefer, you can also retrain the models locally using the training scripts instead of downloading the .pkl files.
-
-⸻
-
-### Contact
-
-Author: Marcos Ibáñez Fandos
-
-GitHub: @MarcosIbanezFandos
-
-Email: marcosibanezfandos@gmail.com
-
-
-Feel free to reach out if you have any questions about the project or want to discuss machine learning and fraud detection in fintech.
+Marcos Ibáñez Fandos · [Portfolio](https://marcosibanezfandos.github.io) · [LinkedIn](https://www.linkedin.com/in/marcos-ibanez/)
