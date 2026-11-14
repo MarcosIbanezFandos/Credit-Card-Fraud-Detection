@@ -142,7 +142,7 @@ with tabs[1]:
                 return [''] * len(row)
 
             st.subheader("📋 Métricas clave", help="🟩 Verde = modelo más barato, 🟥 Rojo = inválido por recall=1.")
-            st.dataframe(df.style.apply(highlight_rows, axis=1), use_container_width=True)
+            st.dataframe(df.style.apply(highlight_rows, axis=1), width="stretch")
 
             modelo_top = df[df["ok_thr"]].sort_values("coste").iloc[0]
             st.success(f"🏆 Modelo ganador: **{modelo_top['modelo']}** – Coste total estimado: **{int(modelo_top['coste'])} €**")
@@ -191,7 +191,7 @@ with tabs[1]:
                 tooltip=["modelo", "coste", "recall", "precision", "f1"]
             ).properties(title="Coste vs Recall", width=750, height=400)
 
-            st.altair_chart(scatter, use_container_width=True)
+            st.altair_chart(scatter, width="stretch")
 
             st.subheader("🧠 Análisis")
             for _, row in df.iterrows():
